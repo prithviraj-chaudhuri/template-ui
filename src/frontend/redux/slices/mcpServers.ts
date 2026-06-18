@@ -15,6 +15,7 @@ export interface MCPServer {
   prompts?: number;
   resources?: number;
   error?: string;
+  auth_url?: string | null;
 }
 
 interface MCPServersState {
@@ -53,6 +54,7 @@ const mcpServersSlice = createSlice({
         prompts?: number;
         resources?: number;
         error?: string;
+        auth_url?: string | null;
       }>
     ) {
       const server = state.servers.find((s) => s.name === action.payload.name);
@@ -62,6 +64,7 @@ const mcpServersSlice = createSlice({
         if (action.payload.prompts !== undefined) server.prompts = action.payload.prompts;
         if (action.payload.resources !== undefined) server.resources = action.payload.resources;
         if (action.payload.error !== undefined) server.error = action.payload.error;
+        if (action.payload.auth_url !== undefined) server.auth_url = action.payload.auth_url;
       }
     },
     setError(state, action: PayloadAction<string>) {

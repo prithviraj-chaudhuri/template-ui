@@ -7,7 +7,6 @@ import {
   selectMCPServersError,
   setLoading,
   setServers,
-  updateServerStatus,
   setError,
   type MCPServerStatus,
 } from '@/redux/slices/mcpServers';
@@ -63,32 +62,14 @@ export function MCPSettings() {
       dispatch(setLoading(true));
       const fetchedServers = await MCPApi.fetchServers();
       dispatch(setServers(fetchedServers));
-
-      // Check status of all servers in parallel
-      const serverNames = fetchedServers.map((s) => s.name);
-      const statuses = await MCPApi.checkAllStatuses(serverNames);
-
-      statuses.forEach((statusData, name) => {
-        dispatch(updateServerStatus({ name, ...statusData }));
-      });
     } catch (err) {
       dispatch(setError(String(err)));
     }
   };
 
-  const refreshServerStatus = async (serverName: string) => {
-    try {
-      const statusData = await MCPApi.checkServerStatus(serverName);
-      dispatch(updateServerStatus({ name: serverName, ...statusData }));
-    } catch (err) {
-      dispatch(
-        updateServerStatus({
-          name: serverName,
-          status: 'disconnected',
-          error: String(err),
-        })
-      );
-    }
+  const refreshServerStatus = async () => {
+    // Refresh all servers since the endpoint returns status for all servers
+    await loadServers();
   };
 
   return (
@@ -168,14 +149,28 @@ export function MCPSettings() {
                   )}
                 </div>
 
-                {/* Refresh Button */}
-                <button
-                  onClick={() => refreshServerStatus(server.name)}
-                  className="p-2 hover:bg-secondary rounded-md transition-colors"
-                  title="Refresh status"
-                >
-                  <RefreshCw className="w-4 h-4 text-muted-foreground" />
-                </button>
+                {/* Auth Button or Refresh Button */}
+                {server.status === 'needs-auth' && server.auth_url ? (
+                  <a
+                    href={server.auth_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-2 bg-yellow-600 hover:bg-yellow-500 text-white rounded-md text-xs font-medium transition-colors flex items-center gap-1"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    Authenticate
+                  </a>
+                ) : (
+                  <button
+                    onClick={() => refreshServerStatus()}
+                    className="p-2 hover:bg-secondary rounded-md transition-colors"
+                    title="Refresh status"
+                  >
+                    <RefreshCw className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                )}
 
                 {/* Status Indicator Toggle */}
                 <div className="shrink-0">

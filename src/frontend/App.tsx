@@ -6,6 +6,7 @@ import { ChatRoutePage } from './pages/ChatPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastNotifications } from './components/ToastNotifications';
+import { McpServersDialog } from './components/McpServersDialog';
 import { useThemeSync } from './hooks/useThemeSync';
 
 export default function App() {
@@ -26,6 +27,7 @@ export default function App() {
         </Routes>
       </AppLayout>
       <ToastNotifications />
+      <McpServersDialog />
     </ErrorBoundary>
   );
 }

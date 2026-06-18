@@ -725,57 +725,6 @@ async function proxyRoutes(fastify: FastifyInstance) {
     }
   });
 
-  /**
-   * GET /mcp/servers/:serverName/status - Check specific server status (registered under /api prefix)
-   */
-  fastify.get<{
-    Params: { serverName: string };
-  }>('/mcp/servers/:serverName/status', async (request, reply) => {
-    const { accessToken, refreshFailed } = await ensureFreshTokens(fastify, request);
-
-    if (refreshFailed) {
-      return sessionExpiredReply(reply);
-    }
-
-    const { serverName } = request.params;
-    const traceId = randomUUID();
-
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'X-Trace-ID': traceId,
-    };
-
-    if (accessToken) {
-      headers['Authorization'] = `Bearer ${accessToken}`;
-    }
-
-    try {
-      const url = `${agentHost}/mcp/servers/${encodeURIComponent(serverName)}/status`;
-      const response = await fetch(url, {
-        method: 'GET',
-        headers,
-      });
-
-      if (!response.ok) {
-        return reply.status(response.status).send({
-          name: serverName,
-          status: 'disconnected',
-          error: 'Failed to check status',
-        });
-      }
-
-      const data = await response.json();
-      return reply.send(data);
-    } catch (error) {
-      fastify.log.error({ traceId, error, serverName }, 'Error checking MCP server status');
-      return reply.status(500).send({
-        name: serverName,
-        status: 'disconnected',
-        error: String(error),
-      });
-    }
-  });
-
   fastify.post('/auth/generate-one-time-token', async (request, reply) => {
     const { accessToken, refreshFailed } = await ensureFreshTokens(fastify, request);
 
