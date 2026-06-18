@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { McpClient } from '@/api/mcpClient';
 
 interface McpServer {
   name: string;
@@ -19,6 +20,7 @@ export const McpServersPanel: React.FC = () => {
   const [servers, setServers] = useState<McpServer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [authenticating, setAuthenticating] = useState<string | null>(null);
 
   const fetchServers = async () => {
     try {
@@ -42,6 +44,21 @@ export const McpServersPanel: React.FC = () => {
     const interval = setInterval(fetchServers, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleAuthenticate = async (server: McpServer) => {
+    if (!server.auth_url) return;
+
+    try {
+      setAuthenticating(server.name);
+      await McpClient.authenticateWithPopup(server.auth_url, server.name);
+      // Refresh servers after authentication
+      await fetchServers();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Authentication failed');
+    } finally {
+      setAuthenticating(null);
+    }
+  };
 
   const getStatusColor = (status: McpServer['status']) => {
     switch (status) {
@@ -153,17 +170,27 @@ export const McpServersPanel: React.FC = () => {
 
             {server.status === 'needs-auth' && server.auth_url && (
               <div className="mt-2 ml-8">
-                <a
-                  href={server.auth_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-3 py-2 bg-yellow-600 hover:bg-yellow-500 text-white rounded text-xs font-medium transition-colors"
+                <button
+                  onClick={() => handleAuthenticate(server)}
+                  disabled={authenticating === server.name}
+                  className="inline-flex items-center gap-2 px-3 py-2 bg-yellow-600 hover:bg-yellow-500 disabled:bg-yellow-700 disabled:cursor-not-allowed text-white rounded text-xs font-medium transition-colors"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                  Authenticate
-                </a>
+                  {authenticating === server.name ? (
+                    <>
+                      <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Connecting...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                      Connect
+                    </>
+                  )}
+                </button>
               </div>
             )}
           </div>

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { CheckCircle, XCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import {
@@ -11,6 +11,7 @@ import {
   type MCPServerStatus,
 } from '@/redux/slices/mcpServers';
 import { MCPApi } from '@/services/mcpApi';
+import { McpClient } from '@/api/mcpClient';
 
 function getStatusConfig(status: MCPServerStatus) {
   switch (status) {
@@ -50,6 +51,7 @@ export function MCPSettings() {
   const servers = useAppSelector(selectMCPServers);
   const loading = useAppSelector(selectMCPServersLoading);
   const error = useAppSelector(selectMCPServersError);
+  const [authenticating, setAuthenticating] = useState<string | null>(null);
 
   // Load servers on mount
   useEffect(() => {
@@ -70,6 +72,19 @@ export function MCPSettings() {
   const refreshServerStatus = async () => {
     // Refresh all servers since the endpoint returns status for all servers
     await loadServers();
+  };
+
+  const handleAuthenticate = async (serverName: string, authUrl: string) => {
+    try {
+      setAuthenticating(serverName);
+      await McpClient.authenticateWithPopup(authUrl, serverName);
+      // Refresh servers after authentication
+      await loadServers();
+    } catch (err) {
+      dispatch(setError(String(err)));
+    } finally {
+      setAuthenticating(null);
+    }
   };
 
   return (
@@ -151,17 +166,25 @@ export function MCPSettings() {
 
                 {/* Auth Button or Refresh Button */}
                 {server.status === 'needs-auth' && server.auth_url ? (
-                  <a
-                    href={server.auth_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-3 py-2 bg-yellow-600 hover:bg-yellow-500 text-white rounded-md text-xs font-medium transition-colors flex items-center gap-1"
+                  <button
+                    onClick={() => handleAuthenticate(server.name, server.auth_url!)}
+                    disabled={authenticating === server.name}
+                    className="px-3 py-2 bg-yellow-600 hover:bg-yellow-500 disabled:bg-yellow-700 disabled:cursor-not-allowed text-white rounded-md text-xs font-medium transition-colors flex items-center gap-1"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                    Authenticate
-                  </a>
+                    {authenticating === server.name ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        Connecting...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        Connect
+                      </>
+                    )}
+                  </button>
                 ) : (
                   <button
                     onClick={() => refreshServerStatus()}
