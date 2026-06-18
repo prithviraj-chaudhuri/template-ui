@@ -35,7 +35,7 @@ function buildGatewayLoginUrl(request: FastifyRequest): string {
 
 function shouldSkipAuth(request: FastifyRequest): boolean {
   const path = request.url.split("?")[0];
-  return path === "/_health" || path.startsWith("/auth/") || path === "/login" || path.startsWith("/dist/") || path === "/api/health/agent";
+  return path === "/_health" || path.startsWith("/auth/") || path === "/login" || path.startsWith("/dist/") || path === "/api/health/agent" || path.startsWith("/api/mcp/") || path.startsWith("/mcp/");
 }
 
 function authCheck(

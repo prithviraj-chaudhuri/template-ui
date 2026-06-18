@@ -3,6 +3,7 @@ import chatsReducer from './slices/chats';
 import personalizationReducer from './slices/personalization';
 import toastsReducer from './slices/toasts';
 import userSettingsReducer from './slices/userSettings';
+import mcpServersReducer from './slices/mcpServers';
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     personalization: personalizationReducer,
     toasts: toastsReducer,
     userSettings: userSettingsReducer,
+    mcpServers: mcpServersReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
