@@ -17,6 +17,7 @@ export interface RuleItem {
 interface PersonalizationState {
   memories: MemoryItem[];
   rules: RuleItem[];
+  regoPolicy: string;
 }
 
 const STORAGE_KEY = 'template-ui-personalization';
@@ -24,11 +25,18 @@ const STORAGE_KEY = 'template-ui-personalization';
 function loadState(): PersonalizationState {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return JSON.parse(stored);
+    if (stored) {
+      const parsed = JSON.parse(stored) as Partial<PersonalizationState>;
+      return {
+        memories: parsed.memories ?? [],
+        rules: parsed.rules ?? [],
+        regoPolicy: parsed.regoPolicy ?? '',
+      };
+    }
   } catch {
     /* ignore */
   }
-  return { memories: [], rules: [] };
+  return { memories: [], rules: [], regoPolicy: '' };
 }
 
 function persist(state: PersonalizationState) {
@@ -87,9 +95,18 @@ const personalizationSlice = createSlice({
       state.rules = [];
       persist(state);
     },
+    setRegoPolicy(state, action: PayloadAction<string>) {
+      state.regoPolicy = action.payload;
+      persist(state);
+    },
+    clearRegoPolicy(state) {
+      state.regoPolicy = '';
+      persist(state);
+    },
     resetPersonalization(state) {
       state.memories = [];
       state.rules = [];
+      state.regoPolicy = '';
       persist(state);
     },
   },
@@ -104,6 +121,8 @@ export const {
   toggleRule,
   removeRule,
   clearRules,
+  setRegoPolicy,
+  clearRegoPolicy,
   resetPersonalization,
 } = personalizationSlice.actions;
 
@@ -115,5 +134,7 @@ export const selectActiveRules = createSelector(
   selectRules,
   (rules) => rules.filter((r) => r.isActive),
 );
+export const selectRegoPolicy = (state: { personalization: PersonalizationState }) =>
+  state.personalization.regoPolicy ?? '';
 
 export default personalizationSlice.reducer;

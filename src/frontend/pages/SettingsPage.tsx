@@ -1,19 +1,21 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@patternfly/react-core';
-import { ArrowLeft, User, Brain, ScrollText, Palette } from 'lucide-react';
+import { ArrowLeft, User, Brain, ScrollText, Palette, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ProfileSection } from '../components/settings/ProfileSection';
 import { MemoryList } from '../components/settings/MemoryList';
 import { RulesEditor } from '../components/settings/RulesEditor';
 import { AppearanceSettings } from '../components/settings/AppearanceSettings';
+import { PolicySettingsWrapper } from '../components/settings/PolicySettingsWrapper';
 
-type TabId = 'profile' | 'memories' | 'rules' | 'appearance';
+type TabId = 'profile' | 'memories' | 'rules' | 'policies' | 'appearance';
 
 const TABS: { id: TabId; label: string; icon: typeof User }[] = [
   { id: 'profile', label: 'Profile', icon: User },
   { id: 'memories', label: 'Memories', icon: Brain },
   { id: 'rules', label: 'Custom Rules', icon: ScrollText },
+  { id: 'policies', label: 'Policy Settings', icon: Shield },
   { id: 'appearance', label: 'Appearance', icon: Palette },
 ];
 
@@ -21,6 +23,7 @@ const TAB_CONTENT: Record<TabId, React.FC> = {
   profile: ProfileSection,
   memories: MemoryList,
   rules: RulesEditor,
+  policies: PolicySettingsWrapper,
   appearance: AppearanceSettings,
 };
 

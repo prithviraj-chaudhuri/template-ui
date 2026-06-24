@@ -2,6 +2,7 @@ import Fastify from "fastify";
 import { clientRoutes } from "./router/client.router.js";
 import { apiRoutes } from "./router/api.router.js";
 import { proxyRoutes } from "./router/proxy.router.js";
+import { policyRoutes } from "./router/policy.router.js";
 import logoutPlugin from "./router/logout.router.js";
 import { authPlugin } from "./plugins/auth.plugin.js";
 import { buildSessionStore, connectRedis } from "./utils/redis.js";
@@ -118,6 +119,7 @@ export async function setupServer() {
 
   await fastify.register(apiRoutes, { prefix: "/api" });
   await fastify.register(proxyRoutes, { prefix: "/api" });
+  await fastify.register(policyRoutes, { prefix: "/api" });
 
   await fastify.register(clientRoutes);
 
