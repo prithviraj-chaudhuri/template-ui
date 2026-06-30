@@ -165,6 +165,24 @@ function MarkdownPre({ className, children, ...props }: MdComponentProps) {
   );
 }
 
+/**
+ * Check if a message contains policy violation context with retry available
+ */
+function getPolicyViolationContext(message: Message) {
+  const customData = (message as Record<string, unknown>).custom_data;
+  if (customData && typeof customData === 'object') {
+    const ctx = (customData as Record<string, unknown>).policy_violation_context;
+    if (ctx && typeof ctx === 'object') {
+      return ctx as {
+        retry_available?: boolean;
+        denial_reasons?: string[];
+        checkpoint?: string;
+      };
+    }
+  }
+  return null;
+}
+
 function MessageCopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
   const disabled = text.length === 0;
@@ -591,6 +609,7 @@ interface ChatMessagesViewProps {
   scrollAreaRef: React.RefObject<HTMLDivElement | null>;
   onSubmit: (inputValue: string) => void;
   onRetry?: () => void;
+  onPolicyRetry?: () => void;
   onCancel: () => void;
   onNewChat?: () => void;
   liveActivityEvents: ProcessedEvent[];
@@ -618,6 +637,7 @@ export function ChatMessagesView({
   scrollAreaRef,
   onSubmit,
   onRetry,
+  onPolicyRetry,
   onCancel,
   onNewChat,
   isRateLimited = false,
@@ -658,6 +678,11 @@ export function ChatMessagesView({
     const timer = setTimeout(() => setShowNoResponse(true), 1500);
     return () => clearTimeout(timer);
   }, [rawNoResponse]);
+
+  // Detect policy violation in last AI message
+  const lastAiMessage = messages.slice().reverse().find(m => m.type === 'ai');
+  const policyCtx = lastAiMessage ? getPolicyViolationContext(lastAiMessage) : null;
+  const showPolicyRetry = !isLoading && policyCtx?.retry_available === true;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -815,6 +840,36 @@ export function ChatMessagesView({
               </div>
             </div>
           )}
+
+          {showPolicyRetry && policyCtx && (
+            <div className="flex items-start gap-3 animate-fadeIn">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-destructive/10 border border-destructive/20 flex items-center justify-center">
+                <AlertCircle className="w-4 h-4 text-destructive" />
+              </div>
+              <div className="bg-card border border-border rounded-2xl rounded-tl-sm px-4 py-3 shadow-card">
+                <p className="text-sm text-muted-foreground mb-2">
+                  This response was blocked by compliance policies.
+                </p>
+                {policyCtx.denial_reasons && policyCtx.denial_reasons.length > 0 && (
+                  <ul className="text-xs text-muted-foreground/80 mb-3 space-y-0.5 list-disc list-inside">
+                    {policyCtx.denial_reasons.map((reason, idx) => (
+                      <li key={idx}>{reason}</li>
+                    ))}
+                  </ul>
+                )}
+                <button
+                  type="button"
+                  onClick={() => onPolicyRetry?.()}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                  aria-label="Retry with policy awareness"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  Retry with Policy Awareness
+                </button>
+              </div>
+            </div>
+          )}
+
           <div ref={bottomRef} />
         </div>
       </div>

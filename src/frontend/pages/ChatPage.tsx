@@ -299,6 +299,25 @@ export function ChatPage({ threadId }: { threadId: string }) {
     }
   }, [thread, threadId, currentChat, dispatch]);
 
+  const handlePolicyRetry = useCallback(async () => {
+    if (!threadId || !currentChat || thread.messages.length === 0) return;
+    try {
+      const retryMessage: Message = {
+        id: `retry-${Date.now()}`,
+        type: 'human',
+        content: 'yes',
+      };
+      const nextMessages = [...thread.messages, retryMessage];
+      await thread.submit({ messages: nextMessages });
+      setTimeout(() => {
+        hasFinalizeEventOccurredRef.current = true;
+      }, 100);
+    } catch (err) {
+      console.error('Failed to retry with policy awareness:', err);
+      dispatch(addToast({ title: 'Retry failed', message: 'Unable to retry. Please try again.', variant: 'danger' }));
+    }
+  }, [thread, threadId, currentChat, dispatch]);
+
   const handleInterruptResume = useCallback(
     async (response: string) => {
       if (!threadId || !currentChat) return;
@@ -420,6 +439,7 @@ export function ChatPage({ threadId }: { threadId: string }) {
             streamEvents={thread.streamEvents}
             isLoading={thread.isLoading}
             onRetry={handleStreamRetry}
+            onPolicyRetry={handlePolicyRetry}
             scrollAreaRef={scrollAreaRef}
             onSubmit={handleSubmit}
             onEditMessage={handleEditMessage}
